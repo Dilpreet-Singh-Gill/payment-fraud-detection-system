@@ -1,13 +1,15 @@
 import { useState } from "react";
+import { useTransactions } from "../context/TransactionContext";
+import { toast } from "react-toastify";
 
 function MakePayment() {
+  const { transactions, addTransaction } = useTransactions();
+
   const [formData, setFormData] = useState({
     amount: "",
     merchant: "",
     description: "",
   });
-
-  const [transactions, setTransactions] = useState([]);
 
   const handleChange = (e) => {
     setFormData({
@@ -19,17 +21,60 @@ function MakePayment() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const amountNumber = parseFloat(formData.amount);
-    const status = amountNumber > 50000 ? "FRAUD" : "SUCCESS";
+    const amount = parseFloat(formData.amount);
+
+    // 🧠 Simple Risk Scoring Logic
+    let riskScore = 0;
+
+    // Rule 1: High amount increases risk
+    if (amount > 50000) riskScore += 50;
+    else if (amount > 20000) riskScore += 30;
+    else riskScore += 10;
+
+    // Rule 2: Suspicious merchant keywords
+    const suspiciousKeywords = ["crypto", "casino", "bet", "lottery"];
+    if (
+      suspiciousKeywords.some((word) =>
+        formData.merchant.toLowerCase().includes(word)
+      )
+    ) {
+      riskScore += 30;
+    }
+
+    // Rule 3: Random behavioral factor (simulate ML uncertainty)
+    riskScore += Math.floor(Math.random() * 20);
+
+    // Cap at 100
+    if (riskScore > 100) riskScore = 100;
+
+    let status = "LOW";
+    if (riskScore > 70) status = "HIGH";
+    else if (riskScore > 40) status = "MEDIUM";
 
     const newTransaction = {
       id: Date.now(),
       ...formData,
+      riskScore,
       status,
       date: new Date().toLocaleString(),
     };
 
-    setTransactions([newTransaction, ...transactions]);
+    addTransaction(newTransaction);
+
+    // 🔥 Smart Alert
+    if (status === "HIGH") {
+      toast.error(`🚨 High Fraud Risk (${riskScore}%)`, {
+        theme: "colored",
+      });
+    } else if (status === "MEDIUM") {
+      toast.warning(`⚠ Medium Risk (${riskScore}%)`, {
+        theme: "colored",
+      });
+    } else {
+      toast.success(`✅ Low Risk (${riskScore}%)`, {
+        theme: "colored",
+      });
+    }
 
     setFormData({
       amount: "",
@@ -118,12 +163,14 @@ function MakePayment() {
 
                     <td className="p-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-white text-sm ${tx.status === "FRAUD"
+                        className={`px-3 py-1 rounded-full text-white text-sm ${tx.status === "HIGH"
                             ? "bg-red-500"
-                            : "bg-green-500"
+                            : tx.status === "MEDIUM"
+                              ? "bg-yellow-500"
+                              : "bg-green-500"
                           }`}
                       >
-                        {tx.status}
+                        {tx.status} ({tx.riskScore}%)
                       </span>
                     </td>
 

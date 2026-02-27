@@ -2,10 +2,10 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import MakePayment from "./pages/MakePayment";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   return (
@@ -26,14 +26,6 @@ function App() {
           }
         />
         <Route
-          path="/make-payment"
-          element={
-            <ProtectedRoute allowedRole="USER">
-              <MakePayment />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/admin/dashboard"
           element={
             <ProtectedRoute allowedRole="ADMIN">
@@ -41,6 +33,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/make-payment"
+          element={
+            <ProtectedRoute allowedRole="USER">
+              <MakePayment />
+            </ProtectedRoute>
+          }
+        />
+
       </Routes>
     </>
   );
